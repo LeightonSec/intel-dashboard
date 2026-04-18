@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intel Dashboard — LeightonSec</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            grid-template-rows: auto 1fr;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            background: #111;
+            border-bottom: 1px solid #222;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 { font-size: 1.2rem; color: #00ff88; letter-spacing: 3px; text-transform: uppercase; }
+        header p { color: #666; font-size: 0.75rem; margin-top: 2px; }
+
+        .live-indicator { display: flex; align-items: center; gap: 8px; color: #666; font-size: 0.8rem; }
+        .live-dot { width: 8px; height: 8px; background: #00ff88; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* Sidebar */
+        .sidebar {
+            background: #0d0d0d;
+            border-right: 1px solid #1a1a1a;
+            padding: 20px 0;
+            overflow-y: auto;
+            height: calc(100vh - 61px);
+        }
+
+        .sidebar-section { margin-bottom: 24px; }
+        .sidebar-title {
+            color: #444;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0 16px;
+            margin-bottom: 8px;
+        }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 16px; }
+        .stat-box { background: #111; border: 1px solid #1a1a1a; border-radius: 4px; padding: 10px; text-align: center; }
+        .stat-number { font-size: 1.4rem; font-weight: bold; color: #00ff88; }
+        .stat-label { font-size: 0.65rem; color: #666; text-transform: uppercase; margin-top: 2px; }
+
+        .filter-group { padding: 0 16px; margin-bottom: 12px; }
+        .filter-group label { display: block; color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            background: #111;
+            border: 1px solid #222;
+            color: #e0e0e0;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            outline: none;
+        }
+        .filter-group select:focus, .filter-group input:focus { border-color: #00ff88; }
+
+        .report-list { padding: 0 8px; }
+        .report-item {
+            padding: 10px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 4px;
+            border: 1px solid transparent;
+            transition: all 0.15s;
+        }
+        .report-item:hover { background: #111; border-color: #222; }
+        .report-item.active { background: #0d1a0d; border-color: #00ff88; }
+        .report-name { font-size: 0.8rem; color: #e0e0e0; }
+        .report-meta { font-size: 0.7rem; color: #666; margin-top: 3px; }
+
+        .version-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            margin-left: 6px;
+        }
+        .v1 { background: #333; color: #aaa; }
+        .v2 { background: #003322; color: #00ff88; border: 1px solid #00ff88; }
+
+        /* Main content */
+        .main { overflow-y: auto; height: calc(100vh - 61px); }
+
+        .main-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-title { font-size: 0.9rem; color: #00ff88; letter-spacing: 1px; }
+        .main-meta { color: #666; font-size: 0.75rem; margin-top: 4px; }
+
+        .sources-bar {
+            padding: 12px 24px;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .source-tag {
+            padding: 3px 10px;
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: #666;
+        }
+
+        .source-tag.security { border-color: #ff4444; color: #ff4444; }
+        .source-tag.ai_research { border-color: #4488ff; color: #4488ff; }
+        .source-tag.bsv_bastion { border-color: #ffaa00; color: #ffaa00; }
+        .source-tag.cve { border-color: #ff8800; color: #ff8800; }
+
+        .report-content {
+            padding: 24px;
+            max-width: 900px;
+        }
+
+        /* Report HTML styling */
+        .report-content h1 { color: #00ff88; font-size: 1.3rem; margin-bottom: 16px; border-bottom: 1px solid #222; padding-bottom: 12px; }
+        .report-content h2 { color: #00cc6a; font-size: 1rem; margin: 24px 0 12px; }
+        .report-content h3 { color: #e0e0e0; font-size: 0.9rem; margin: 16px 0 8px; }
+        .report-content p { color: #ccc; line-height: 1.7; margin-bottom: 12px; font-size: 0.9rem; }
+        .report-content ul, .report-content ol { padding-left: 20px; margin-bottom: 12px; }
+        .report-content li { color: #ccc; line-height: 1.6; font-size: 0.9rem; margin-bottom: 4px; }
+        .report-content table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 0.85rem; }
+        .report-content th { background: #111; color: #00ff88; padding: 8px 12px; text-align: left; border: 1px solid #222; }
+        .report-content td { padding: 8px 12px; border: 1px solid #1a1a1a; color: #ccc; }
+        .report-content tr:nth-child(even) td { background: #0d0d0d; }
+        .report-content code { background: #111; color: #00ff88; padding: 2px 6px; border-radius: 3px; font-size: 0.85rem; }
+        .report-content hr { border: none; border-top: 1px solid #222; margin: 20px 0; }
+        .report-content em { color: #666; }
+        .report-content strong { color: #fff; }
+
+        .empty-state {
+            padding: 60px 24px;
+            text-align: center;
+            color: #444;
+        }
+
+        .empty-state h2 { font-size: 1rem; margin-bottom: 8px; color: #555; }
+        .empty-state p { font-size: 0.85rem; }
+
+        .search-bar {
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            background: #111;
+            border: 1px solid #222;
+            color: #e0e0e0;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .search-bar input:focus { border-color: #00ff88; }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>⚡ Intel Dashboard</h1>
+            <p>LeightonSec Intelligence Pipeline — Report Viewer</p>
+        </div>
+        <div class="live-indicator">
+            <div class="live-dot"></div>
+            LIVE
+        </div>
+    </header>
+
+    <div class="sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-title">Overview</div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-number" id="statTotal">0</div>
+                    <div class="stat-label">Reports</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="statSources">0</div>
+                    <div class="stat-label">Sources</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="statV1">0</div>
+                    <div class="stat-label">v1</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="statV2">0</div>
+                    <div class="stat-label">v2</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-title">Search</div>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search reports..." oninput="filterReports()">
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-title">Filter</div>
+            <div class="filter-group">
+                <label>Version</label>
+                <select id="filterVersion" onchange="filterReports()">
+                    <option value="">All</option>
+                    <option value="v1">v1</option>
+                    <option value="v2">v2</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Period</label>
+                <select id="filterPeriod" onchange="filterReports()">
+                    <option value="">All</option>
+                    <option value="AM">Morning</option>
+                    <option value="PM">Evening</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-title">Reports</div>
+            <div class="report-list" id="reportList">
+                <div style="padding: 16px; color: #444; font-size: 0.8rem;">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="main-header">
+            <div>
+                <div class="main-title" id="mainTitle">Select a report</div>
+                <div class="main-meta" id="mainMeta">Choose a report from the sidebar to view</div>
+            </div>
+        </div>
+
+        <div class="sources-bar" id="sourcesBar"></div>
+
+        <div class="report-content" id="reportContent">
+            <div class="empty-state">
+                <h2>⚡ Intel Dashboard</h2>
+                <p>Select a report from the sidebar to begin reading</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allReports = [];
+        let allSources = [];
+
+        async function loadStats() {
+            const res = await fetch('/api/stats');
+            const data = await res.json();
+            document.getElementById('statTotal').textContent = data.total_reports;
+            document.getElementById('statSources').textContent = data.total_sources;
+            document.getElementById('statV1').textContent = data.v1_reports;
+            document.getElementById('statV2').textContent = data.v2_reports;
+        }
+
+        async function loadReports() {
+            const res = await fetch('/api/reports');
+            allReports = await res.json();
+            renderReportList(allReports);
+        }
+
+        async function loadSources() {
+            const res = await fetch('/api/sources');
+            allSources = await res.json();
+            renderSourcesBar(allSources);
+        }
+
+        function renderReportList(reports) {
+            const list = document.getElementById('reportList');
+            if (reports.length === 0) {
+                list.innerHTML = '<div style="padding: 16px; color: #444; font-size: 0.8rem;">No reports found</div>';
+                return;
+            }
+            list.innerHTML = reports.map(r => `
+                <div class="report-item" onclick="loadReport('${r.filename}')" id="item-${r.filename.replace(/\./g, '-')}">
+                    <div class="report-name">
+                        ${r.date} ${r.period}
+                        <span class="version-badge ${r.version}">${r.version}</span>
+                    </div>
+                    <div class="report-meta">${formatDate(r.modified)}</div>
+                </div>
+            `).join('');
+        }
+
+        function filterReports() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const version = document.getElementById('filterVersion').value;
+            const period = document.getElementById('filterPeriod').value;
+
+            let filtered = allReports.filter(r => {
+                const matchSearch = !search || r.filename.toLowerCase().includes(search);
+                const matchVersion = !version || r.version === version;
+                const matchPeriod = !period || r.period === period;
+                return matchSearch && matchVersion && matchPeriod;
+            });
+
+            renderReportList(filtered);
+        }
+
+        async function loadReport(filename) {
+            // Update active state
+            document.querySelectorAll('.report-item').forEach(el => el.classList.remove('active'));
+            const itemEl = document.getElementById('item-' + filename.replace(/\./g, '-'));
+            if (itemEl) itemEl.classList.add('active');
+
+            document.getElementById('reportContent').innerHTML = '<div style="padding:40px;color:#444">Loading...</div>';
+
+            const res = await fetch(`/api/reports/${filename}`);
+            const data = await res.json();
+
+            document.getElementById('mainTitle').textContent = filename;
+            document.getElementById('mainMeta').textContent = `${data.version} · ${data.period} · ${formatDate(data.modified)}`;
+            document.getElementById('reportContent').innerHTML = data.content;
+        }
+
+        function renderSourcesBar(sources) {
+            const bar = document.getElementById('sourcesBar');
+            const categories = [...new Set(sources.map(s => s.category))];
+            bar.innerHTML = categories.map(cat => {
+                const count = sources.filter(s => s.category === cat).length;
+                return `<span class="source-tag ${cat}">${cat} (${count})</span>`;
+            }).join('');
+        }
+
+        function formatDate(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            return d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
+        }
+
+        // Load everything
+        loadStats();
+        loadReports();
+        loadSources();
+
+        // Auto refresh every 60 seconds
+        setInterval(() => { loadStats(); loadReports(); }, 60000);
+    </script>
+</body>
+</html>

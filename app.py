@@ -10,9 +10,15 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'changeme')
 
-# Path to intel pipeline reports
-REPORTS_PATH = os.path.expanduser("~/Documents/Projects/intel-pipeline/reports")
-OBSIDIAN_PATH = os.path.expanduser("~/Documents/MyVault/Inbox")
+REPORTS_PATH = os.path.expanduser(
+    os.getenv('INTEL_REPORTS_PATH', '~/Documents/Projects/intel-pipeline/reports')
+)
+OBSIDIAN_PATH = os.path.expanduser(
+    os.getenv('INTEL_OBSIDIAN_PATH', '~/Documents/MyVault/Inbox')
+)
+PIPELINE_PATH = os.path.expanduser(
+    os.getenv('INTEL_PIPELINE_PATH', '~/Documents/Projects/intel-pipeline')
+)
 
 def get_reports() -> list:
     """Get all intel reports sorted by date descending"""
@@ -67,7 +73,7 @@ def get_source_status() -> list:
     """Check which sources are configured"""
     try:
         import sys
-        sys.path.insert(0, os.path.expanduser("/Users/leighton/Documents/Projects/intel-pipeline"))
+        sys.path.insert(0, PIPELINE_PATH)
         from config_loader import load_config, get_feeds
         config = load_config()
         feeds = get_feeds(config)

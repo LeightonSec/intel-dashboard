@@ -8,8 +8,8 @@ config. Companion tool to the intel-pipeline project.
 
 ## SOC Toolkit Position
 - **Layer:** Visibility (Intelligence)
-- **Reads from:** intel-pipeline reports folder, Obsidian inbox
-- **Reads config from:** intel-pipeline config/sources.yaml via config_loader
+- **Reads from:** intel-pipeline reports folder (configurable via `INTEL_REPORTS_PATH`), Obsidian inbox (`INTEL_OBSIDIAN_PATH`)
+- **Reads config from:** intel-pipeline config/sources.yaml via config_loader (`INTEL_PIPELINE_PATH`)
 - **Gap it fills:** Browser-based report viewer, replaces opening Obsidian manually
 
 ## Architecture
@@ -28,7 +28,7 @@ config. Companion tool to the intel-pipeline project.
 ✅ Version and period filtering
 ✅ Search by filename
 ✅ Source status from pipeline config
-✅ Category colour coding — security, ai_research, bsv_bastion, cve
+✅ Category colour coding — security, ai_research, crypto, cve
 ✅ Stats overview — total reports, v1/v2 counts, source count
 ✅ Auto-refresh every 60 seconds
 ✅ Path traversal protection — reports validated against known list

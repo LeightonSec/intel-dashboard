@@ -40,16 +40,15 @@ config. Companion tool to the intel-pipeline project.
 - `GET /api/stats` — dashboard statistics
 
 ## Security Notes
-- SECRET_KEY in .env — never committed
+- SECRET_KEY fails closed — app raises and refuses to start if unset (no forgeable default). Kept in .env, never committed
+- HTML sanitisation — markdown report output sanitised with nh3 (tight tag/attr allowlist) before it reaches the browser DOM. Report content originates from untrusted external OSINT feeds (stored-XSS defence)
+- Input validation — version/category query filters constrained, 400 on invalid
 - Read-only — dashboard never writes to pipeline or reports
 - Path traversal protection — filename validated against known reports list
-- sys.path manipulation isolated inside get_source_status() function
+- Source config read via yaml.safe_load on the pipeline's config/sources.yaml — no sys.path injection, no foreign-module execution
 - Server on 127.0.0.1 port 5004
-- pyyaml required in dashboard venv — not inherited from pipeline venv
 
 ## Known Issues / Tech Debt
-- Source status requires pyyaml installed in dashboard venv separately
-- config_loader imported via sys.path manipulation — fragile if pipeline moves
 - No full text search across report content yet
 - No persistent storage — reads files fresh on every request
 

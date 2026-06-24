@@ -1,8 +1,8 @@
-import pytest
 from unittest.mock import patch
 
-from app import app, extract_date
+import pytest
 
+from app import app, extract_date
 
 MOCK_REPORTS = [
     {

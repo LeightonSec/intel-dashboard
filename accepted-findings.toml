@@ -1,0 +1,30 @@
+# Accepted findings for intel-dashboard.
+# Each entry removes a finding from gate consideration — severity stays visible
+# in the report. The missing_validation scanner is single-line: it flags the
+# input-read call itself and cannot see the validation that runs immediately
+# after. Each waiver below documents the validation that is actually present.
+# Required fields: scanner, file, match (substring), rationale, reviewer, date.
+
+[[accepted]]
+scanner   = "missing_validation"
+file      = "app.py"
+match     = "version = request.args.get('version', '')"
+rationale = "version is validated on the next lines against the VALID_VERSIONS allowlist ('', 'v1', 'v2') with abort(400) on mismatch, and used only for equality filtering — never in a query, path, or eval sink."
+reviewer  = "leighton"
+date      = "2026-06-24"
+
+[[accepted]]
+scanner   = "missing_validation"
+file      = "app.py"
+match     = "category = request.args.get('category', '')"
+rationale = "category is validated on the next lines with CATEGORY_RE.fullmatch (charset [a-z_], max length 32) and abort(400) on mismatch, then used only as a lowercased substring filter over known filenames — never in a query, path, or eval sink."
+reviewer  = "leighton"
+date      = "2026-06-24"
+
+[[accepted]]
+scanner   = "missing_validation"
+file      = "app.py"
+match     = "config = yaml.safe_load(f) or {}"
+rationale = "yaml.safe_load (not load) cannot execute arbitrary objects; the result is guarded ('or {}', then .get('feeds', {}) with tolerant iteration) and the whole read is wrapped in try/except degrading to []. Input is the operator's own local pipeline config, not external request data."
+reviewer  = "leighton"
+date      = "2026-06-24"

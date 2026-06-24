@@ -78,9 +78,11 @@ The dashboard reads reports matching `Intel-*.md` from the configured paths. Run
 
 ## Security Design
 
+- HTML sanitisation — report markdown comes from external OSINT feeds and is treated as untrusted. After markdown-to-HTML conversion the output is sanitised with `nh3` against a tight tag/attribute allowlist, so a feed item carrying `<script>` or an event handler cannot execute in the browser (stored-XSS defence)
 - Read-only — the dashboard never writes to pipeline folders or reports
 - Path traversal protection — filenames validated against the known report list before serving
-- `SECRET_KEY` in `.env` — never committed
+- Input validation — `version` and `category` query filters are constrained (allowlist / charset) and rejected with `400` otherwise
+- `SECRET_KEY` fails closed — the app refuses to start if it is unset, so it can never fall back to a forgeable default. Kept in `.env`, never committed
 - Binds to `127.0.0.1` only — not exposed to the network
 
 ---
@@ -97,7 +99,7 @@ Designed for local use alongside a compatible markdown-output OSINT pipeline. It
 
 ## Limitations
 
-- Source status depends on the pipeline's `config_loader` being importable — degrades gracefully to an empty list if unavailable
+- Source status reads the pipeline's `config/sources.yaml` directly — degrades gracefully to an empty list if the file is missing or unreadable
 - No full-text search across report content (filename/date search only)
 - In-memory only — no persistent storage across restarts
 - Single-worker only — not safe for multi-worker WSGI deployments without adding concurrency controls
